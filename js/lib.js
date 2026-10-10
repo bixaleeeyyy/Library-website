@@ -1,6 +1,24 @@
 /* Shared code: data storage, book cards, header/menu/footer.
    Everything is saved in the visitor's browser (localStorage).
    To use a real database later, replace the functions in `Lib` below. */
+/* ============================================================
+   EDIT THIS PART: your library's details.
+   Change the text between the quotes. Keep the quotes and commas.
+   ============================================================ */
+var SITE = {
+  name: 'Your Library Name',
+  about: 'Write a short description of your library here.',
+  email: 'library@example.com',
+  phone: '+91 00000 00000',
+  address: 'Street, City',
+  hours: 'Mon to Sat, 9 AM to 6 PM',
+  // News cards on the home page. Add or remove lines. Delete every line to hide the News section.
+  news: [
+    { date: '', title: 'Welcome to our new library website' }
+  ]
+};
+/* ============================================================ */
+
 (function () {
   'use strict';
 
@@ -55,7 +73,7 @@
   }
 
   var Lib = {
-    K: K, rd: rd, wr: wr, esc: esc, safeUrl: safeUrl, ymd: ymd, COLORS: COLORS,
+    SITE: SITE, K: K, rd: rd, wr: wr, esc: esc, safeUrl: safeUrl, ymd: ymd, COLORS: COLORS,
 
     qs: function (n) { return new URLSearchParams(location.search).get(n); },
 
@@ -141,7 +159,7 @@
     ];
     head.innerHTML =
       '<header class="bar"><div class="wrap">' +
-      '<a class="logo" href="index.html"><i>' + bookIcon + '</i>[Library name]</a>' +
+      '<a class="logo" href="index.html"><i>' + bookIcon + '</i>' + esc(SITE.name) + '</a>' +
       '<div><a class="icon-btn" href="wishlist.html" aria-label="Wishlist">' + heart + '</a>' +
       '<button class="icon-btn" id="menu-open" aria-label="Open menu">' + burger + '</button></div>' +
       '</div></header>' +
@@ -163,7 +181,11 @@
   }
   var foot = document.getElementById('site-footer');
   if (foot) {
-    foot.innerHTML = '<footer class="foot"><div class="wrap"><h3>About us</h3><p>[Short description of your library]</p>' +
-      '<h3>Contact us</h3><p>[Email] &middot; [Phone]<br>[Address and opening hours]</p></div></footer>';
+    foot.innerHTML = '<footer class="foot"><div class="wrap cols">' +
+      '<div><h3>About us</h3><p>' + esc(SITE.about) + '</p></div>' +
+      '<div><h3>Contact us</h3><p>' + [SITE.email, SITE.phone].filter(Boolean).map(function (x) { return esc(x); }).join(' &middot; ') +
+      (SITE.address ? '<br>' + esc(SITE.address) : '') + (SITE.hours ? '<br>' + esc(SITE.hours) : '') + '</p></div>' +
+      '</div></footer>';
   }
+  if (document.title.indexOf(SITE.name) === -1) document.title += ' | ' + SITE.name;
 })();
