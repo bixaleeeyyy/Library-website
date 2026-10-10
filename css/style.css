@@ -101,7 +101,7 @@ label{display:block;font-weight:700;font-size:13px;margin:14px 0 6px}
 .msg.err{background:#FBE9E5;color:#8A2A18}
 .chipinfo{display:inline-block;padding:2px 10px;border-radius:10px;background:#E3F0EB;color:#14503F;font-size:12px;font-weight:700}
 .chipinfo.out{background:#FBE9E5;color:#8A2A18}
-.page{padding:20px 0 40px}
+.page{padding:20px 16px 40px}
 .page h1{font-size:28px;margin-bottom:12px}
 
 /* book detail */
@@ -146,7 +146,7 @@ body.reader .bar a,body.reader .icon-btn{color:inherit}
 .foot{background:var(--navy);color:#fff;padding:28px 0;margin-top:32px}
 .foot h3{font-size:18px}
 .foot p{color:#C9D3DE;margin:8px 0 0;line-height:1.6}
-.foot .cols{display:grid;grid-template-columns:1fr;gap:24px}
+.foot .cols{display:grid;grid-template-columns:1fr;gap:48px}
 
 /* wide screens */
 @media(min-width:900px){
