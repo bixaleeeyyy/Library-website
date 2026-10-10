@@ -8,8 +8,8 @@
 var SITE = {
   name: 'LIBO',
   about: ' We are passionate about bringing readers and books together. Our library is designed to make discovering, exploring, and enjoying books a simple and pleasant experience. We aim to create a welcoming space for readers of all interests, where every book opens the door to new ideas, knowledge, and imagination. Our goal is to make every reading journey meaningful.',
-  email: 'library123@gmail.com',
-  phone: '+91 00000 00000',
+  email: 'libo583@gmail.com',
+  phone: '+91 xxxxx xxxxx',
   address: '24 Green Park Road, Lakeview Avenue, Kozikode, Kerala , India.',
   hours: 'Mon to Sat, 9 AM to 10 PM',
   // News cards on the home page. Add or remove lines. Delete every line to hide the News section.
@@ -58,12 +58,12 @@ var SITE = {
     // Sample books. Replace or delete them on the Admin page.
     var rows = [
       // Order: title, author, genre, pages, e-book (true/false), borrow count, picture (optional, e.g. 'images/orchard.jpg')
-      ['The Quiet Orchard', 'Maya Rao', 'Fiction', 320, true, 920],
-      ['Atlas of Small Things', 'Daniel Okafor', 'Non-fiction', 240, false, 610],
-      ['Cells and Seasons', 'Priya Menon', 'Science', 288, true, 700],
-      ['The Salt Road', 'Lukas Weiss', 'History', 410, false, 810],
-      ['Night Train to Nowhere', 'Elena Costa', 'Fiction', 352, true, 760],
-      ['Little Fox Learns to Count', 'Ava Brooks', 'Children', 48, true, 530],
+      ['The Alchemist', 'Paulo Coelho', 'Fiction', 208, false, 176, 'images/Book-The-Alchemist'],
+      ['The Adventures of Sherlock Holmes', 'Arthur Conan Doyle', 'Fiction', 366, true, 205, 'images/Book-The-adventures-of-sherlock-holmes'],
+      ['Sapiens: A Brief History of Humankind', 'Yuval Noah Harari', 'History', 480, false, 27, 'images/Book-Sapiens-A-Brief-History-of-Humankind'],
+      ['Chemmeen', 'Thakazhi Sivasankara Pillai', 'Malayalam', 249, false, 59],
+      ['The Selfish Gene', 'Richard Dawkins', 'Science', 496, false, 95,'images/Book-The-Selfish-Gene'],
+      ['Crime and Punishment', 'Fyodor Dostoevsky', 'Psychological', 527, true, 83,'images/Book-Crime-And-Punishment'],
       ['Keeper of the Light', 'Tom Hale', 'Biography', 276, false, 330],
       ['Physics for the Curious', 'Ravi Iyer', 'Science', 360, true, 470],
       ['Rivers of the Old World', 'Hana Sato', 'History', 300, false, 390],
