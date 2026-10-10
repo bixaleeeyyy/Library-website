@@ -6,19 +6,26 @@
    Change the text between the quotes. Keep the quotes and commas.
    ============================================================ */
 var SITE = {
-  name: 'Your Library Name',
-  about: 'Write a short description of your library here.',
-  email: 'library@example.com',
+  name: 'LIBO',
+  about: ' We are passionate about bringing readers and books together. Our library is designed to make discovering, exploring, and enjoying books a simple and pleasant experience. We aim to create a welcoming space for readers of all interests, where every book opens the door to new ideas, knowledge, and imagination. Our goal is to make every reading journey meaningful.',
+  email: 'library123@gmail.com',
   phone: '+91 00000 00000',
-  address: 'Street, City',
-  hours: 'Mon to Sat, 9 AM to 6 PM',
+  address: '24 Green Park Road, Lakeview Avenue, Kozikode, Kerala , India.',
+  hours: 'Mon to Sat, 9 AM to 10 PM',
   // News cards on the home page. Add or remove lines. Delete every line to hide the News section.
   // image: optional picture for the card, e.g. 'images/news1.jpg' (upload it to the images folder). Leave '' for no picture.
   // text: the full story, shown when someone clicks the card. Type \n\n to start a new paragraph.
   news: [
     { date: '', title: 'Welcome to our new library website', image: '',
+      text: 'We have launched our new library website. You can now search our books, read e-books online and keep track of your reading.\n\nSign in to save a wishlist and see your reading progress.' },
+      { date: '', title: 'Welcome to our new library website', image: '',
+      text: 'We have launched our new library website. You can now search our books, read e-books online and keep track of your reading.\n\nSign in to save a wishlist and see your reading progress.' },
+      { date: '', title: 'Welcome to our new library website', image: '',
+      text: 'We have launched our new library website. You can now search our books, read e-books online and keep track of your reading.\n\nSign in to save a wishlist and see your reading progress.' },
+      { date: '', title: 'Welcome to our new library website', image: '',
       text: 'We have launched our new library website. You can now search our books, read e-books online and keep track of your reading.\n\nSign in to save a wishlist and see your reading progress.' }
   ]
+  
 };
 /* ============================================================ */
 
