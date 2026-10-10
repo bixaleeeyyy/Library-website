@@ -38,6 +38,23 @@
   if (!b) { text.innerHTML = '<h1>Book not found</h1><p><a href="ebooks.html">Back to e-books</a></p>'; document.querySelector('.rtools').hidden = true; return; }
   document.title = b.title;
 
+  // If this book has a PDF (e.g. 'pdfs/orchard.pdf' or an https link), show it instead of text.
+  var pdf = /^(https?:\/\/[^\s'"()<>]+|pdfs\/[\w\-.]+\.pdf)$/i.test(b.ebookUrl || '') ? b.ebookUrl : '';
+  if (pdf) {
+    document.querySelector('.rtools').hidden = true;
+    text.style.cssText = 'max-width:none;padding:0';
+    text.innerHTML =
+      '<div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:10px 16px">' +
+        '<b style="font-family:Fraunces,serif">' + E(b.title) + '</b>' +
+        '<span><a class="btn" href="book.html?id=' + b.id + '">Back to book</a> ' +
+        '<a class="btn primary" href="' + E(pdf) + '" target="_blank" rel="noopener">Open in new tab</a></span></div>' +
+      '<iframe src="' + E(pdf) + '" title="' + E(b.title) + '" style="display:block;width:100%;height:calc(100vh - 130px);min-height:420px;border:0;background:#fff"></iframe>' +
+      '<p class="muted" style="padding:8px 16px;font:13px \'DM Sans\',sans-serif">If the book does not show here (some phones), use Open in new tab.</p>';
+    Lib.recordDay();
+    setInterval(function () { if (!document.hidden) Lib.addMinute(); }, 60000);
+    return;
+  }
+
   // Split the e-book text into pages of 3 paragraphs.
   var paras = (b.text || '').split(/\n\s*\n/).map(function (s) { return s.trim(); }).filter(Boolean);
   var pages = [];
