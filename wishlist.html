@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wishlist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<main class="wrap page">
+  <h1>Wishlist</h1>
+  <p class="muted" id="count"></p>
+  <div class="stack" id="list"></div>
+  <div class="card" id="empty" hidden style="text-align:center;padding:32px 16px">
+    <h2>Your wishlist is empty</h2>
+    <p class="muted">Tap "Add to wishlist" on any book to save it here.</p>
+    <a class="btn primary" href="books.html">Browse books</a>
+  </div>
+</main>
+<div id="site-footer"></div>
+<script src="js/lib.js"></script>
+<script>
+(function () {
+  var E = Lib.esc;
+  function draw() {
+    var list = Lib.wishlist().map(Lib.book).filter(Boolean);
+    document.getElementById('count').textContent = list.length + ' saved book' + (list.length === 1 ? '' : 's');
+    document.getElementById('empty').hidden = list.length > 0;
+    document.getElementById('list').innerHTML = list.map(function (b) {
+      return '<div class="card"><div class="item" style="border:0;padding:0"><a class="mini" href="book.html?id=' + b.id + '">' + Lib.cover(b, b.ebook) + '</a>' +
+        '<div class="grow"><a href="book.html?id=' + b.id + '"><b>' + E(b.title) + '</b></a><div class="muted" style="font-size:13px">' + E(b.author) + '</div>' +
+        '<span class="chipinfo' + (b.copies > 0 ? '' : ' out') + '">' + (b.copies > 0 ? (b.ebook ? 'E-book available' : 'Available') : 'All copies borrowed') + '</span></div></div>' +
+        '<div class="acts" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">' +
+        (b.ebook ? '<a class="btn primary" href="reader.html?id=' + b.id + '">Read e-book</a>' : '') +
+        '<a class="btn" href="book.html?id=' + b.id + '">View book</a>' +
+        '<button class="btn danger" data-rm="' + b.id + '">Remove</button></div></div>';
+    }).join('');
+  }
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-rm]'); if (!t) return;
+    Lib.toggleWish(t.getAttribute('data-rm')); draw();
+  });
+  draw();
+})();
+</script>
+</body>
+</html>

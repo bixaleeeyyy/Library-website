@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>All books</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<main class="wrap page">
+  <h1>All books</h1>
+  <form class="searchbar" action="books.html">
+    <label class="sr" for="q">Search books</label>
+    <input id="q" name="q" type="search" placeholder="Title, author or subject" style="border-radius:24px">
+    <input type="hidden" name="genre" id="hg"><input type="hidden" name="tab" id="ht">
+    <button class="btn primary" type="submit">Search</button>
+  </form>
+  <div class="tabs" id="tabs" aria-label="Show"></div>
+  <div class="tabs" id="genres" aria-label="Genre"></div>
+  <p class="muted" id="count"></p>
+  <div class="grid" id="grid"></div>
+  <p id="empty" class="muted" hidden>No books match. Try a different search or filter.</p>
+</main>
+<div id="site-footer"></div>
+<script src="js/lib.js"></script>
+<script>
+(function () {
+  var E = Lib.esc, p = new URLSearchParams(location.search);
+  var q = (p.get('q') || '').trim(), g = p.get('genre') || '', tab = p.get('tab') || 'all';
+  document.getElementById('q').value = q;
+  document.getElementById('hg').value = g;
+  document.getElementById('ht').value = tab;
+
+  function link(o) {
+    var n = Object.assign({ q: q, genre: g, tab: tab }, o), s = Object.keys(n).filter(function (k) { return n[k] && !(k === 'tab' && n[k] === 'all'); })
+      .map(function (k) { return k + '=' + encodeURIComponent(n[k]); }).join('&');
+    return 'books.html' + (s ? '?' + s : '');
+  }
+  var tabs = [['all', 'All'], ['popular', 'Popular'], ['recent', 'Recently added'], ['ebooks', 'E-books']];
+  document.getElementById('tabs').innerHTML = tabs.map(function (t) {
+    return '<a class="chip' + (tab === t[0] ? ' on' : '') + '" href="' + link({ tab: t[0] }) + '">' + t[1] + '</a>';
+  }).join('');
+  document.getElementById('genres').innerHTML = ['All genres'].concat(Lib.genres()).map(function (x, i) {
+    var v = i === 0 ? '' : x;
+    return '<a class="chip' + (g === v ? ' on' : '') + '" href="' + link({ genre: v }) + '">' + E(x) + '</a>';
+  }).join('');
+
+  var list = Lib.books().filter(function (b) {
+    if (g && b.genre !== g) return false;
+    if (tab === 'ebooks' && !b.ebook) return false;
+    if (q) { var s = (b.title + ' ' + b.author + ' ' + b.genre).toLowerCase(); if (s.indexOf(q.toLowerCase()) === -1) return false; }
+    return true;
+  });
+  if (tab === 'popular') list.sort(function (a, b) { return b.borrows.all - a.borrows.all; });
+  else if (tab === 'recent') list.sort(function (a, b) { return b.addedAt - a.addedAt; });
+  else list.sort(function (a, b) { return a.title.localeCompare(b.title); });
+
+  document.getElementById('count').textContent = list.length + ' book' + (list.length === 1 ? '' : 's');
+  document.getElementById('grid').innerHTML = list.map(function (b) { return Lib.card(b, { ebook: tab === 'ebooks' }); }).join('');
+  document.getElementById('empty').hidden = list.length > 0;
+})();
+</script>
+</body>
+</html>

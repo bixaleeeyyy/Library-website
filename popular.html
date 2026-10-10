@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Popular books</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<main class="wrap page">
+  <h1>Popular books</h1>
+  <div class="tabs" id="periods"></div>
+  <div class="tabs" id="genres"></div>
+  <p class="muted" id="sub"></p>
+  <div class="stack" id="list"></div>
+  <p id="empty" class="muted" hidden>No popular books in this genre yet.</p>
+</main>
+<div id="site-footer"></div>
+<script src="js/lib.js"></script>
+<script>
+(function () {
+  var E = Lib.esc, period = 'week', genre = '';
+  var periods = [['week', 'This week'], ['month', 'This month'], ['all', 'All time']];
+
+  function draw() {
+    document.getElementById('periods').innerHTML = periods.map(function (p) {
+      return '<button class="chip' + (period === p[0] ? ' on' : '') + '" data-p="' + p[0] + '">' + p[1] + '</button>';
+    }).join('');
+    document.getElementById('genres').innerHTML = ['All genres'].concat(Lib.genres()).map(function (x, i) {
+      var v = i === 0 ? '' : x;
+      return '<button class="chip' + (genre === v ? ' on' : '') + '" data-g="' + E(v) + '">' + E(x) + '</button>';
+    }).join('');
+
+    var list = Lib.books().filter(function (b) { return !genre || b.genre === genre; })
+      .sort(function (a, b) { return b.borrows[period] - a.borrows[period]; });
+    var max = list.length ? Math.max(list[0].borrows[period], 1) : 1;
+    document.getElementById('sub').textContent = 'Most borrowed ' + (period === 'all' ? 'of all time' : 'this ' + period) + ' · ' + list.length + ' books';
+    document.getElementById('empty').hidden = list.length > 0;
+    document.getElementById('list').innerHTML = list.map(function (b, i) {
+      return '<a class="card item" style="border-bottom:1px solid var(--line)" href="book.html?id=' + b.id + '">' +
+        '<div class="rank" style="color:' + (i < 3 ? '#B5731E' : '#4F6275') + '">' + (i + 1) + '</div>' +
+        '<div class="mini">' + Lib.cover(b) + '</div>' +
+        '<div class="grow"><b>' + E(b.title) + '</b><div class="muted" style="font-size:13px">' + E(b.author) + ' · ' + E(b.genre) + '</div>' +
+        '<div class="bar6"><i style="width:' + Math.round(b.borrows[period] / max * 100) + '%"></i></div>' +
+        '<div class="muted" style="font-size:12px;margin-top:4px">' + b.borrows[period] + ' borrows</div></div></a>';
+    }).join('');
+  }
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('button[data-p],button[data-g]'); if (!t) return;
+    if (t.hasAttribute('data-p')) period = t.getAttribute('data-p'); else genre = t.getAttribute('data-g');
+    draw();
+  });
+  draw();
+})();
+</script>
+</body>
+</html>

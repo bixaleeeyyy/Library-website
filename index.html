@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<section class="hero">
+  <div class="wrap">
+    <h1>Read something new today</h1>
+    <p>[Hero text or welcome line. For a photo, see README.md]</p>
+  </div>
+</section>
+
+<main class="wrap">
+
+  <section class="section" id="cont-sec" hidden>
+    <h2>Continue reading</h2>
+    <div class="card cont" id="cont" style="margin-top:12px"></div>
+  </section>
+
+  <section class="section">
+    <form class="searchbar" action="books.html">
+      <label class="sr" for="q">Search the library</label>
+      <input id="q" name="q" type="search" placeholder="Search title, author or subject" style="border-radius:24px">
+      <button class="btn primary" type="submit">Search</button>
+    </form>
+  </section>
+
+  <section class="section">
+    <h2>Categories</h2>
+    <div class="cats" id="cats"></div>
+  </section>
+
+  <section class="section" id="news">
+    <h2>News</h2>
+    <div class="row">
+      <div class="news"><i></i><div><small>[Date]</small>[News headline goes here]</div></div>
+      <div class="news"><i></i><div><small>[Date]</small>[News headline goes here]</div></div>
+      <div class="news"><i></i><div><small>[Date]</small>[News headline goes here]</div></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="sec-head"><h2>Popular books</h2><a class="see" href="popular.html">See all</a></div>
+    <div class="row" id="popular"></div>
+  </section>
+
+  <section class="section">
+    <div class="sec-head"><div><h2>Recommended for you</h2><div class="muted" id="rec-sub"></div></div><a class="see" href="books.html">See all</a></div>
+    <div class="row" id="recommended"></div>
+  </section>
+
+  <section class="section">
+    <div class="sec-head"><h2>Recently added</h2><a class="see" href="books.html?tab=recent">See all</a></div>
+    <div class="row" id="recent"></div>
+  </section>
+
+  <section class="section">
+    <div class="sec-head"><h2>All books</h2><a class="see" href="books.html">See all</a></div>
+    <div class="grid" id="all"></div>
+  </section>
+
+  <section class="section">
+    <div class="sec-head"><div><h2>E-books available</h2><div class="muted">Read online, no waiting</div></div><a class="see" href="ebooks.html">See all</a></div>
+    <div class="row" id="ebooks"></div>
+  </section>
+
+</main>
+
+<div id="site-footer"></div>
+
+<script src="js/lib.js"></script>
+<script>
+(function () {
+  var E = Lib.esc, B = Lib.books();
+  function put(id, list, o) { document.getElementById(id).innerHTML = list.map(function (b) { return Lib.card(b, o); }).join(''); }
+  var pop = B.slice().sort(function (a, b) { return b.borrows.all - a.borrows.all; });
+  var recent = B.slice().sort(function (a, b) { return b.addedAt - a.addedAt; });
+
+  put('popular', pop.slice(0, 8));
+  put('recent', recent.slice(0, 8));
+  put('all', B.slice().sort(function (a, b) { return a.title.localeCompare(b.title); }).slice(0, 6));
+  put('ebooks', B.filter(function (b) { return b.ebook; }).slice(0, 8), { ebook: true });
+
+  document.getElementById('cats').innerHTML = Lib.genres().map(function (g) {
+    return '<a class="chip" href="books.html?genre=' + encodeURIComponent(g) + '">' + E(g) + '</a>';
+  }).join('');
+
+  // Recommended: genres from your wishlist and reading; otherwise staff picks.
+  var gs = {}, pr = Lib.progress();
+  Lib.wishlist().forEach(function (id) { var b = Lib.book(id); if (b) gs[b.genre] = 1; });
+  Object.keys(pr).forEach(function (id) { var b = Lib.book(id); if (b) gs[b.genre] = 1; });
+  var rec = pop.filter(function (b) { return gs[b.genre] && !pr[b.id]; });
+  var sub = 'Based on your wishlist and reading';
+  if (!rec.length) { rec = pop.slice(2); sub = 'Staff picks'; }
+  document.getElementById('rec-sub').textContent = sub;
+  put('recommended', rec.slice(0, 8));
+
+  // Continue reading: your most recent unfinished e-book.
+  var cur = Object.keys(pr).map(function (id) { return { id: id, p: pr[id] }; })
+    .filter(function (x) { return x.p.page < x.p.total && Lib.book(x.id); })
+    .sort(function (a, b) { return b.p.ts - a.p.ts; })[0];
+  if (cur) {
+    var b = Lib.book(cur.id), pct = Math.round(cur.p.page / cur.p.total * 100);
+    document.getElementById('cont-sec').hidden = false;
+    document.getElementById('cont').innerHTML =
+      '<a class="cv" href="book.html?id=' + b.id + '">' + Lib.cover(b) + '</a>' +
+      '<div style="flex:1;min-width:0"><b>' + E(b.title) + '</b><div class="muted">' + E(b.author) + '</div>' +
+      '<div class="prog"><i style="width:' + pct + '%"></i></div><div class="muted" style="font-size:12px">' + pct + '% read</div>' +
+      '<a class="btn primary" style="margin-top:8px" href="reader.html?id=' + b.id + '">Resume</a></div>';
+  }
+})();
+</script>
+</body>
+</html>

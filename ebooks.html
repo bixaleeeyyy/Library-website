@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>E-books</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<main class="wrap page">
+  <h1>E-books</h1>
+  <p class="muted" id="sub"></p>
+  <div class="tabs" id="genres"></div>
+  <div class="stack" id="list" style="margin-top:12px"></div>
+  <p id="empty" class="muted" hidden>No e-books in this genre yet.</p>
+</main>
+<div id="site-footer"></div>
+<script src="js/lib.js"></script>
+<script>
+(function () {
+  var E = Lib.esc, genre = '';
+  function draw() {
+    var all = Lib.books().filter(function (b) { return b.ebook; });
+    var gs = {}; all.forEach(function (b) { gs[b.genre] = 1; });
+    document.getElementById('genres').innerHTML = ['All genres'].concat(Object.keys(gs).sort()).map(function (x, i) {
+      var v = i === 0 ? '' : x;
+      return '<button class="chip' + (genre === v ? ' on' : '') + '" data-g="' + E(v) + '">' + E(x) + '</button>';
+    }).join('');
+    var list = all.filter(function (b) { return !genre || b.genre === genre; });
+    document.getElementById('sub').textContent = list.length + ' e-books available to read online';
+    document.getElementById('empty').hidden = list.length > 0;
+    document.getElementById('list').innerHTML = list.map(function (b) {
+      return '<div class="card item" style="border-bottom:1px solid var(--line)">' +
+        '<a class="mini" style="width:56px" href="reader.html?id=' + b.id + '" aria-label="Read ' + E(b.title) + '">' + Lib.cover(b, true) + '</a>' +
+        '<div class="grow"><a href="book.html?id=' + b.id + '"><b>' + E(b.title) + '</b></a>' +
+        '<div class="muted" style="font-size:13px">' + E(b.author) + ' · ' + E(b.genre) + '</div>' +
+        '<div class="muted" style="font-size:12px">' + b.pages + ' pages</div></div>' +
+        '<a class="btn primary" href="reader.html?id=' + b.id + '">Read</a></div>';
+    }).join('');
+  }
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('button[data-g]'); if (!t) return;
+    genre = t.getAttribute('data-g'); draw();
+  });
+  draw();
+})();
+</script>
+</body>
+</html>

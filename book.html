@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Book details</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<main class="wrap page" id="main"></main>
+<div id="site-footer"></div>
+<script src="js/lib.js"></script>
+<script>
+(function () {
+  var E = Lib.esc, main = document.getElementById('main');
+  var b = Lib.book(Lib.qs('id'));
+  if (!b) { main.innerHTML = '<h1>Book not found</h1><p><a class="btn" href="books.html">Browse all books</a></p>'; return; }
+  document.title = b.title;
+
+  function render(msg) {
+    var u = Lib.user(), bor = Lib.borrowed(), due = bor[b.id], wished = Lib.inWish(b.id);
+    var next = encodeURIComponent('book.html?id=' + b.id);
+    var borrowBtn = due
+      ? '<button class="btn" id="return">Return book (due ' + E(due) + ')</button>'
+      : (u ? '<button class="btn primary" id="borrow">Borrow this book</button>'
+           : '<a class="btn primary" href="signin.html?next=' + next + '">Sign in to borrow</a>');
+    var pdf = Lib.safeUrl(b.ebookUrl);
+    var meta = [['Pages', b.pages], ['Language', b.language], ['Published', b.year], ['Publisher', b.publisher],
+                ['ISBN', b.isbn], ['Copies in library', b.copies]]
+      .map(function (m) { return '<div><small>' + m[0] + '</small><b>' + (m[1] === '' || m[1] == null ? '–' : E(m[1])) + '</b></div>'; }).join('');
+    var more = Lib.books().filter(function (x) { return x.id !== b.id && x.author === b.author; });
+    var like = Lib.books().filter(function (x) { return x.id !== b.id && x.genre === b.genre; });
+
+    main.innerHTML =
+      '<div class="detail"><div class="big">' + Lib.cover(b, b.ebook) + '</div><div>' +
+      '<h1>' + E(b.title) + '</h1><p class="muted" style="margin:6px 0">by ' + E(b.author) + '</p>' +
+      '<div class="tabs"><a class="chip" href="books.html?genre=' + encodeURIComponent(b.genre) + '">' + E(b.genre) + '</a></div>' +
+      '<div class="card stack" style="margin-top:16px">' +
+        '<div><span class="chipinfo' + (b.copies > 0 ? '' : ' out') + '">' + (b.copies > 0 ? 'Available' : 'All copies borrowed') + '</span></div>' +
+        borrowBtn +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="wish">' + (wished ? 'Saved to wishlist' : 'Add to wishlist') + '</button>' +
+        (b.ebook ? '<a class="btn primary" href="reader.html?id=' + b.id + '">Read e-book</a>' : '') +
+        (b.ebook && pdf ? '<a class="btn" href="' + E(pdf) + '" target="_blank" rel="noopener">Open PDF</a>' : '') + '</div>' +
+        (msg ? '<div class="msg ok">' + E(msg) + '</div>' : '') +
+      '</div>' +
+      '<h2 style="margin-top:24px">Details</h2><div class="meta">' + meta + '</div>' +
+      '<h2 style="margin-top:24px">About this book</h2><p style="line-height:1.6">' + E(b.summary) + '</p>' +
+      '</div></div>' +
+      (more.length ? '<h2 style="margin-top:32px">More by this author</h2><div class="row">' + more.map(function (x) { return Lib.card(x); }).join('') + '</div>' : '') +
+      (like.length ? '<h2 style="margin-top:32px">More in ' + E(b.genre) + '</h2><div class="row">' + like.map(function (x) { return Lib.card(x); }).join('') + '</div>' : '');
+
+    document.getElementById('wish').onclick = function () { var on = Lib.toggleWish(b.id); render(on ? 'Added to your wishlist.' : 'Removed from your wishlist.'); };
+    var bb = document.getElementById('borrow');
+    if (bb) bb.onclick = function () {
+      var d = new Date(); d.setDate(d.getDate() + 14);
+      var x = Lib.borrowed(); x[b.id] = Lib.ymd(d); Lib.saveBorrowed(x);
+      var all = Lib.books(); all.forEach(function (k) { if (k.id === b.id) k.borrows.all++, k.borrows.month++, k.borrows.week++; }); Lib.saveBooks(all);
+      render('Borrowed. Please return it by ' + Lib.ymd(d) + '.');
+    };
+    var rb = document.getElementById('return');
+    if (rb) rb.onclick = function () { var x = Lib.borrowed(); delete x[b.id]; Lib.saveBorrowed(x); render('Book returned. Thank you!'); };
+  }
+  render();
+})();
+</script>
+</body>
+</html>

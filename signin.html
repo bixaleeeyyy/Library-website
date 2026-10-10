@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<main class="wrap page" style="max-width:460px">
+  <div class="card" id="box">
+    <h1 id="title">Sign in</h1>
+
+    <form id="form" novalidate>
+      <div id="name-row" hidden>
+        <label for="name">Full name</label>
+        <input id="name" type="text" autocomplete="name">
+      </div>
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="email">
+      <label for="pass">Password</label>
+      <div style="display:flex;gap:8px">
+        <input id="pass" type="password" autocomplete="current-password">
+        <button type="button" class="btn" id="show" style="padding:0 14px">Show</button>
+      </div>
+      <div class="msg err" id="err" role="alert" hidden></div>
+      <button class="btn primary" type="submit" id="submit" style="width:100%;margin-top:16px">Sign in</button>
+    </form>
+
+    <p class="muted" style="text-align:center;margin:16px 0 0"><span id="switch-text">New here?</span>
+      <button type="button" class="chip" id="switch" style="border:0;background:none;color:var(--green);font-weight:700;padding:0 6px">Create an account</button></p>
+
+    <!-- DEMO ONLY: delete this block before sharing the site publicly -->
+    <p class="muted" id="demo" style="font-size:12px;border-top:1px solid var(--line);padding-top:12px;margin-top:12px">
+      Demo admin account: <b>admin@library.demo</b> / <b>admin123</b>
+    </p>
+
+    <div id="done" hidden>
+      <div class="msg ok" id="done-msg"></div>
+      <div class="stack" style="margin-top:12px" id="done-links"></div>
+    </div>
+  </div>
+</main>
+<script src="js/lib.js"></script>
+<script>
+/* Demo sign-in: accounts live in this browser only (localStorage), passwords are hashed with SHA-256.
+   For a real site with many users, use a backend (e.g. Firebase Auth or Supabase) instead. */
+(function () {
+  var mode = 'signin', $ = function (id) { return document.getElementById(id); };
+
+  async function sha(s) {
+    var b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+    return Array.from(new Uint8Array(b)).map(function (x) { return x.toString(16).padStart(2, '0'); }).join('');
+  }
+  async function ensureAdmin() {
+    var us = Lib.rd(Lib.K.users, []);
+    if (!us.some(function (u) { return u.role === 'admin'; })) {
+      us.push({ email: 'admin@library.demo', name: 'Library Admin', role: 'admin', hash: await sha('admin123') });
+      Lib.wr(Lib.K.users, us);
+    }
+  }
+  function err(m) { var e = $('err'); e.hidden = !m; e.textContent = m || ''; }
+  function setMode(m) {
+    mode = m; err('');
+    $('title').textContent = m === 'signin' ? 'Sign in' : 'Create account';
+    $('name-row').hidden = m === 'signin';
+    $('submit').textContent = m === 'signin' ? 'Sign in' : 'Create account';
+    $('switch-text').textContent = m === 'signin' ? 'New here?' : 'Already a member?';
+    $('switch').textContent = m === 'signin' ? 'Create an account' : 'Sign in';
+    $('pass').autocomplete = m === 'signin' ? 'current-password' : 'new-password';
+  }
+  function nextUrl() { var n = Lib.qs('next'); return /^[\w\-]+\.html(\?[\w=&%\-]*)?$/.test(n || '') ? n : null; }
+  function finish(u, msg) {
+    Lib.setUser({ email: u.email, name: u.name, role: u.role });
+    var n = nextUrl();
+    if (n) { location.href = n; return; }
+    $('form').hidden = true; $('switch').parentNode.hidden = true; $('demo').hidden = true; $('title').textContent = 'You are in';
+    $('done').hidden = false; $('done-msg').textContent = msg;
+    $('done-links').innerHTML = '<a class="btn primary" href="index.html">Go to home</a>' + (u.role === 'admin' ? '<a class="btn" href="admin.html">Open admin dashboard</a>' : '');
+  }
+
+  $('switch').onclick = function () { setMode(mode === 'signin' ? 'signup' : 'signin'); };
+  $('show').onclick = function () { var p = $('pass'), s = p.type === 'password'; p.type = s ? 'text' : 'password'; this.textContent = s ? 'Hide' : 'Show'; };
+
+  $('form').onsubmit = async function (e) {
+    e.preventDefault();
+    var email = $('email').value.trim().toLowerCase(), pw = $('pass').value, name = $('name').value.trim();
+    if (mode === 'signup' && !name) return err('Enter your name.');
+    if (!/^\S+@\S+\.\S+$/.test(email)) return err('Enter a valid email address.');
+    if (pw.length < 6) return err('Password must be at least 6 characters.');
+    await ensureAdmin();
+    var us = Lib.rd(Lib.K.users, []), hash = await sha(pw);
+    var found = us.filter(function (u) { return u.email === email; })[0];
+    if (mode === 'signin') {
+      if (!found || found.hash !== hash) return err('Wrong email or password.');
+      finish(found, 'Signed in as ' + found.name + (found.role === 'admin' ? ' (admin).' : '.'));
+    } else {
+      if (found) return err('An account with this email already exists. Try signing in.');
+      var u = { email: email, name: name, role: 'member', hash: hash };
+      us.push(u); Lib.wr(Lib.K.users, us);
+      finish(u, 'Account created for ' + name + '.');
+    }
+  };
+
+  var cur = Lib.user();
+  if (cur) {
+    $('form').hidden = true; $('switch').parentNode.hidden = true; $('demo').hidden = true;
+    $('title').textContent = 'You are signed in';
+    $('done').hidden = false; $('done-msg').textContent = 'Signed in as ' + (cur.name || cur.email) + '.';
+    $('done-links').innerHTML = '<a class="btn primary" href="index.html">Go to home</a>' +
+      (cur.role === 'admin' ? '<a class="btn" href="admin.html">Open admin dashboard</a>' : '') + '<button class="btn" id="out">Sign out</button>';
+    $('out').onclick = Lib.signOut;
+  }
+})();
+</script>
+</body>
+</html>

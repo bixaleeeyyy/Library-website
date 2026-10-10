@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>E-book reader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="reader light">
+<div id="site-header"></div>
+<main class="text" id="text" style="font-size:18px"></main>
+<section class="rtools" aria-label="Reader controls"><div class="in">
+  <div class="r"><span id="pg"></span><span id="pc"></span></div>
+  <div class="prog" style="margin:0"><i id="bar" style="width:0"></i></div>
+  <div class="r">
+    <button class="btn" id="prev" style="flex:1">Previous</button>
+    <button class="btn primary" id="next" style="flex:1">Next page</button>
+  </div>
+  <div class="r">
+    <div style="display:flex;gap:6px">
+      <button class="btn" id="smaller" aria-label="Smaller text" style="padding:0;width:44px">A-</button>
+      <button class="btn" id="bigger" aria-label="Larger text" style="padding:0;width:44px">A+</button>
+    </div>
+    <div style="display:flex;gap:6px">
+      <button class="btn" data-theme="light">Light</button>
+      <button class="btn" data-theme="sepia">Sepia</button>
+      <button class="btn" data-theme="dark">Dark</button>
+    </div>
+  </div>
+</div></section>
+<script src="js/lib.js"></script>
+<script>
+(function () {
+  var E = Lib.esc, text = document.getElementById('text');
+  var b = Lib.book(Lib.qs('id'));
+  if (!b) { text.innerHTML = '<h1>Book not found</h1><p><a href="ebooks.html">Back to e-books</a></p>'; document.querySelector('.rtools').hidden = true; return; }
+  document.title = b.title;
+
+  // Split the e-book text into pages of 3 paragraphs.
+  var paras = (b.text || '').split(/\n\s*\n/).map(function (s) { return s.trim(); }).filter(Boolean);
+  var pages = [];
+  for (var i = 0; i < paras.length; i += 3) pages.push(paras.slice(i, i + 3));
+  var hasText = pages.length > 0;
+  var total = hasText ? pages.length : (Number(b.pages) || 1);
+
+  var s = Lib.rd(Lib.K.reader, { size: 18, theme: 'light' });
+  var saved = Lib.progress()[b.id];
+  var page = saved ? Math.min(Math.max(saved.page, 1), total) : 1;
+
+  function draw() {
+    document.body.className = 'reader ' + s.theme;
+    text.style.fontSize = s.size + 'px';
+    var body = hasText ? pages[page - 1].map(function (p) { return '<p>' + E(p) + '</p>'; }).join('')
+      : '<p>[Page ' + page + ' of "' + E(b.title) + '"]</p><p>This e-book has no text yet. A librarian can paste the book text on the Admin page' +
+        (Lib.safeUrl(b.ebookUrl) ? ', or you can <a href="' + E(Lib.safeUrl(b.ebookUrl)) + '" target="_blank" rel="noopener"><u>open the PDF</u></a>.' : ' or add a PDF link.') + '</p>';
+    text.innerHTML = '<div class="muted" style="font:12px \'DM Sans\',sans-serif;letter-spacing:.08em;text-transform:uppercase">' + E(b.title) + '</div>' + body;
+    document.getElementById('pg').textContent = 'Page ' + page + ' of ' + total;
+    var pct = Math.round(page / total * 100);
+    document.getElementById('pc').textContent = pct + '% read';
+    document.getElementById('bar').style.width = pct + '%';
+    Lib.saveProgress(b.id, page, total);
+    Lib.wr(Lib.K.reader, s);
+    window.scrollTo(0, 0);
+  }
+  document.getElementById('prev').onclick = function () { page = Math.max(1, page - 1); draw(); };
+  document.getElementById('next').onclick = function () { page = Math.min(total, page + 1); draw(); };
+  document.getElementById('smaller').onclick = function () { s.size = Math.max(14, s.size - 2); draw(); };
+  document.getElementById('bigger').onclick = function () { s.size = Math.min(30, s.size + 2); draw(); };
+  document.querySelectorAll('[data-theme]').forEach(function (el) { el.onclick = function () { s.theme = el.getAttribute('data-theme'); draw(); }; });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight') document.getElementById('next').click();
+    if (e.key === 'ArrowLeft') document.getElementById('prev').click();
+  });
+
+  // Reading time and streak
+  Lib.recordDay();
+  setInterval(function () { if (!document.hidden) Lib.addMinute(); }, 60000);
+  draw();
+})();
+</script>
+</body>
+</html>
