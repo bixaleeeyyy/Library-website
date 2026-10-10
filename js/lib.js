@@ -99,7 +99,7 @@ var SITE = {
     qs: function (n) { return new URLSearchParams(location.search).get(n); },
 
     /* books */
-    books: function () { var b = rd(K.books, null), v = 1; if (!b || !b.length || rd('lib_booksv', 0) !== v) { b = seed(); wr(K.books, b); wr('lib_booksv', v); } return b; },
+    books: function () { var b = rd(K.books, null), v = 2; if (!b || !b.length || rd('lib_booksv', 0) !== v) { b = seed(); wr(K.books, b); wr('lib_booksv', v); } return b; },
     saveBooks: function (b) { wr(K.books, b); },
     resetBooks: function () { wr(K.books, seed()); },
     book: function (id) { return Lib.books().filter(function (x) { return String(x.id) === String(id); })[0]; },
