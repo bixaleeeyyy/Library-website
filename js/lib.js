@@ -64,12 +64,13 @@ var SITE = {
       ['Chemmeen', 'Thakazhi Sivasankara Pillai', 'Malayalam', 249, false, 59],
       ['The Selfish Gene', 'Richard Dawkins', 'Science', 496, false, 95,'images/Book-The-Selfish-Gene'],
       ['Crime and Punishment', 'Fyodor Dostoevsky', 'Psychological', 527, true, 83,'images/Book-Crime-And-Punishment'],
-      ['Keeper of the Light', 'Tom Hale', 'Biography', 276, false, 330],
-      ['Physics for the Curious', 'Ravi Iyer', 'Science', 360, true, 470],
-      ['Rivers of the Old World', 'Hana Sato', 'History', 300, false, 390],
-      ['The Paper Lantern', 'Mei Lin', 'Fiction', 198, true, 280],
-      ['Algebra Made Simple', 'Sam Patel', 'Textbooks', 420, false, 240],
-      ['Stars Over the Harbour', 'Nora Kim', 'Fiction', 264, false, 180]
+      ['Guns, Germs, and Steel', 'Jared Diamond', 'History', 480, false, 30, 'images/Book-Guns-Germs-and-Steel'],
+      ['Oru Desathinte Katha', 'S. K. Pottekkatt', 'Malayalam', 566, false, 70, 'images/Book-Oru-Desathinte-Katha'],
+      ['Cosmos', 'Carl Sagan', 'Science', 365, false, 30, 'images/Book-Cosmos'],
+      ["Alice's Adventures in Wonderland", 'Lewis Carroll', 'Children', 122, true, 90, 'images/Book-Alice-in-Wonderland'],
+      ['Moby-Dick; or, The Whale', 'Herman Melville', 'Fiction', 635, true, 80],
+      ['Ram c/o Anandhi', 'Akhil P. Dharmajan', 'Romance', 320, false, 40],
+      ['Wings of Fire', 'A. P. J. Abdul Kalam', 'Autobiography', 180, false, 180]
     ];
     var now = Date.now(), day = 864e5;
     return rows.map(function (r, i) {
