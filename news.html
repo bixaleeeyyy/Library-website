@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>News</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<main class="wrap page article" id="main"></main>
+<div id="site-footer"></div>
+<script src="js/lib.js"></script>
+<script>
+(function () {
+  var E = Lib.esc, news = Lib.SITE.news || [], main = document.getElementById('main');
+  var id = parseInt(Lib.qs('id'), 10), n = news[id];
+  if (!n) { main.innerHTML = '<h1>News not found</h1><p><a class="btn" href="index.html">Back to home</a></p>'; return; }
+  document.title = n.title;
+  var img = Lib.safeUrl(n.image);
+  var paras = String(n.text || '').split(/\n\s*\n/).map(function (s) { return s.trim(); }).filter(Boolean);
+  var others = news.map(function (x, i) { return { x: x, i: i }; }).filter(function (o) { return o.i !== id; });
+  main.innerHTML =
+    '<p><a href="index.html#news" class="muted">&larr; Back to news</a></p>' +
+    '<h1>' + E(n.title) + '</h1>' +
+    (n.date ? '<div class="muted">' + E(n.date) + '</div>' : '') +
+    (img ? '<div class="hero-img" style="background:url(' + img + ') center/cover"></div>' : '') +
+    (paras.length ? paras.map(function (p) { return '<p>' + E(p) + '</p>'; }).join('') : '<p class="muted">No further details yet.</p>') +
+    (others.length ? '<h2 style="margin-top:32px">More news</h2><div class="stack" style="margin-top:12px">' + others.map(function (o) {
+      return '<a class="card" href="news.html?id=' + o.i + '"><b>' + E(o.x.title) + '</b>' + (o.x.date ? '<div class="muted" style="font-size:13px">' + E(o.x.date) + '</div>' : '') + '</a>';
+    }).join('') + '</div>' : '');
+})();
+</script>
+</body>
+</html>

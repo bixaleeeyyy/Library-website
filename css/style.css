@@ -76,8 +76,19 @@ label{display:block;font-weight:700;font-size:13px;margin:14px 0 6px}
 .item .mini{flex:none;width:48px}
 .item .grow{flex:1;min-width:0}
 .item .acts{display:flex;gap:8px;flex-wrap:wrap}
-.newsgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,340px));gap:16px;margin-top:12px}
-.news{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.news{flex:none;width:270px;display:block;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.news:hover{box-shadow:0 4px 14px rgba(17,38,60,.15);color:inherit}
+.news .more{display:block;margin-top:8px;color:var(--green);font-size:13px;font-weight:700}
+.rowwrap{position:relative}
+.arrow{position:absolute;top:70px;z-index:5;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--navy);font-size:28px;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgba(17,38,60,.25);display:flex;align-items:center;justify-content:center;padding:0 0 3px}
+.arrow:hover{background:var(--navy);color:#fff}
+.arrow[hidden]{display:none}
+.arrow.prev{left:-6px}
+.arrow.next{right:-6px}
+.row{scroll-behavior:smooth}
+.article{max-width:760px}
+.article .hero-img{height:260px;border-radius:14px;background:#DCE6DF;margin:12px 0 16px}
+.article p{line-height:1.7;font-size:17px}
 .news i{display:block;height:96px;background:#DCE6DF}
 .news div{padding:12px;font-weight:700}
 .news small{display:block;color:var(--muted);font-weight:400}
@@ -145,6 +156,8 @@ body.reader .bar a,body.reader .icon-btn{color:inherit}
   .book{width:150px}
   .grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:24px 18px}
   .row{gap:18px}
-  .news i{height:120px}
+  .news{width:320px}
+  .news i{height:150px}
+  .arrow{top:100px}
   .cats .chip{min-height:48px;padding:0 22px;font-size:15px}
 }

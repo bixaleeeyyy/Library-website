@@ -40,7 +40,7 @@
 
   <section class="section" id="news" hidden>
     <h2>News</h2>
-    <div class="newsgrid" id="newslist"></div>
+    <div class="row" id="newslist"></div>
   </section>
 
   <section class="section">
@@ -81,8 +81,10 @@
   var news = Lib.SITE.news || [];
   if (news.length) {
     document.getElementById('news').hidden = false;
-    document.getElementById('newslist').innerHTML = news.map(function (n) {
-      return '<article class="news"><i></i><div>' + (n.date ? '<small>' + E(n.date) + '</small>' : '') + E(n.title) + '</div></article>';
+    document.getElementById('newslist').innerHTML = news.map(function (n, i) {
+      var img = Lib.safeUrl(n.image);
+      return '<a class="news" href="news.html?id=' + i + '"><i' + (img ? ' style="background:url(' + img + ') center/cover"' : '') + '></i><div>' +
+        (n.date ? '<small>' + E(n.date) + '</small>' : '') + E(n.title) + '<span class="more">Read more</span></div></a>';
     }).join('');
   }
   function put(id, list, o) { document.getElementById(id).innerHTML = list.map(function (b) { return Lib.card(b, o); }).join(''); }

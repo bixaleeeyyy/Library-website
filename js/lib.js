@@ -13,8 +13,11 @@ var SITE = {
   address: 'Street, City',
   hours: 'Mon to Sat, 9 AM to 6 PM',
   // News cards on the home page. Add or remove lines. Delete every line to hide the News section.
+  // image: optional picture for the card, e.g. 'images/news1.jpg' (upload it to the images folder). Leave '' for no picture.
+  // text: the full story, shown when someone clicks the card. Type \n\n to start a new paragraph.
   news: [
-    { date: '', title: 'Welcome to our new library website' }
+    { date: '', title: 'Welcome to our new library website', image: '',
+      text: 'We have launched our new library website. You can now search our books, read e-books online and keep track of your reading.\n\nSign in to save a wishlist and see your reading progress.' }
   ]
 };
 /* ============================================================ */
@@ -188,4 +191,35 @@ var SITE = {
       '</div></footer>';
   }
   if (document.title.indexOf(SITE.name) === -1) document.title += ' | ' + SITE.name;
+
+  /* Left/right arrows on every sliding row (works with mouse; touch users can swipe) */
+  function enhance() {
+    var rows = document.querySelectorAll('.row:not([data-sl])');
+    Array.prototype.forEach.call(rows, function (row) {
+      row.setAttribute('data-sl', '1');
+      var wrap = document.createElement('div'); wrap.className = 'rowwrap';
+      row.parentNode.insertBefore(wrap, row); wrap.appendChild(row);
+      function mk(cls, label, glyph) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'arrow ' + cls;
+        b.setAttribute('aria-label', label); b.innerHTML = glyph; wrap.appendChild(b); return b;
+      }
+      var prev = mk('prev', 'Slide left', '&#8249;'), next = mk('next', 'Slide right', '&#8250;');
+      function upd() {
+        var max = row.scrollWidth - row.clientWidth;
+        prev.hidden = row.scrollLeft < 4; next.hidden = row.scrollLeft >= max - 4;
+      }
+      prev.onclick = function () { row.scrollBy({ left: -row.clientWidth * 0.8, behavior: 'smooth' }); };
+      next.onclick = function () { row.scrollBy({ left: row.clientWidth * 0.8, behavior: 'smooth' }); };
+      row.addEventListener('scroll', upd);
+      window.addEventListener('resize', upd);
+      new MutationObserver(upd).observe(row, { childList: true });
+      upd(); setTimeout(upd, 300);
+    });
+  }
+  enhance();
+  var pend = false;
+  new MutationObserver(function () {
+    if (pend) return; pend = true;
+    requestAnimationFrame(function () { pend = false; enhance(); });
+  }).observe(document.body, { childList: true, subtree: true });
 })();
