@@ -58,19 +58,27 @@ var SITE = {
     // Sample books. Replace or delete them on the Admin page.
     var rows = [
       // Order: title, author, genre, pages, e-book (true/false), borrow count, picture (optional, e.g. 'images/orchard.jpg')
-      ['The Alchemist', 'Paulo Coelho', 'Fiction', 208, false, 176, 'images/Book-The-Alchemist'],
-      ['The Adventures of Sherlock Holmes', 'Arthur Conan Doyle', 'Fiction', 366, true, 205, 'images/Book-The-adventures-of-sherlock-holmes'],
-      ['Sapiens: A Brief History of Humankind', 'Yuval Noah Harari', 'History', 480, false, 27, 'images/Book-Sapiens-A-Brief-History-of-Humankind'],
-      ['Chemmeen', 'Thakazhi Sivasankara Pillai', 'Malayalam', 249, false, 59],
-      ['The Selfish Gene', 'Richard Dawkins', 'Science', 496, false, 95,'images/Book-The-Selfish-Gene'],
-      ['Crime and Punishment', 'Fyodor Dostoevsky', 'Psychological', 527, true, 83,'images/Book-Crime-And-Punishment'],
-      ['Guns, Germs, and Steel', 'Jared Diamond', 'History', 480, false, 30, 'images/Book-Guns-Germs-and-Steel'],
-      ['Oru Desathinte Katha', 'S. K. Pottekkatt', 'Malayalam', 566, false, 70, 'images/Book-Oru-Desathinte-Katha'],
-      ['Cosmos', 'Carl Sagan', 'Science', 365, false, 30, 'images/Book-Cosmos'],
-      ["Alice's Adventures in Wonderland", 'Lewis Carroll', 'Children', 122, true, 90, 'images/Book-Alice-in-Wonderland'],
-      ['Moby-Dick; or, The Whale', 'Herman Melville', 'Fiction', 635, true, 80],
-      ['Ram c/o Anandhi', 'Akhil P. Dharmajan', 'Romance', 320, false, 40],
-      ['Wings of Fire', 'A. P. J. Abdul Kalam', 'Autobiography', 180, false, 180]
+      ['The Alchemist', 'Paulo Coelho', 'Fiction', 208, false, 176, 'images/Book-The-Alchemist.jpg'],
+      ['The Adventures of Sherlock Holmes', 'Arthur Conan Doyle', 'Fiction', 366, true, 205, 'images/Book-The-adventures-of-sherlock-holmes.jpg'],
+      ['Sapiens: A Brief History of Humankind', 'Yuval Noah Harari', 'History', 480, false, 27, 'images/Book-Sapiens-A-Brief-History-of-Humankind.jpg'],
+      ['Treasure Island', 'Robert Louis Stevenson', 'Fiction', 333, true, 169, 'images/Book-Treasure-Island.jpg'],
+      ['The Selfish Gene', 'Richard Dawkins', 'Science', 496, false, 95,'images/Book-The-Selfish-Gene.jpg'],
+      ['Crime and Punishment', 'Fyodor Dostoevsky', 'Psychological', 527, true, 83,'images/Book-Crime-And-Punishment.jpg'],
+      ['Guns, Germs, and Steel', 'Jared Diamond', 'History', 480, false, 30, 'images/Book-Guns-Germs-and-Steel.jpg'],
+      ['Oru Desathinte Katha', 'S. K. Pottekkatt', 'Malayalam', 566, false, 70, 'images/Book-Oru-Desathinte-Katha.jpg'],
+      ['Cosmos', 'Carl Sagan', 'Science', 365, false, 30, 'images/Book-Cosmos.jpg'],
+      ["Alice's Adventures in Wonderland", 'Lewis Carroll', 'Children', 122, true, 90, 'images/Book-Alice-in-Wonderland.jpg'],
+      ['Moby-Dick; or, The Whale', 'Herman Melville', 'Fiction', 635, true, 80,'images/Book-Moby-Dick.jpg'],
+      ['Ram c/o Anandhi', 'Akhil P. Dharmajan', 'Romance', 320, false, 40, 'images/Book-Ram-care-of-Anandhi.jpg'],
+      ['Wings of Fire', 'A. P. J. Abdul Kalam', 'Autobiography', 180, false, 180, 'images/Book-Wings-of-Fire.jpg'],
+      ['Dracula', 'Bram Stoker', 'Horror', 480, true, 72,'images/Book-Dracula.jpg'],
+      ['The Count of Monte Cristo', 'Alexandre Dumas', 'Fiction', 1804, false, 30, 'images/Book-The-count-of-Monte-cristo.jpg'],
+      ['The Silk Roads: A New History of the World', 'Peter Frankopan', 'History', 736, false, 49, 'images/Book-The-Silk-Roads-A-New-History-of-the-World.jpg'],
+      ['The Strange Case of Dr Jekyll and Mr Hyde', 'Robert Louis Stevenson', 'Fiction', 90, true, 153, 'images/Book-the-strange-case-of-dr-jekyll-and-hyde.jpg'],
+      ['Balyakalasakhi', 'Vaikom Muhammad Basheer', 'Malayalam', 80, false, 108, 'images/Book-Balyakalasakhi.jpg'],
+      ['Charlie and the Chocolate Factory', 'Roald Dahl', 'Children', 192, true, 60,'images/Book-Charlie-and-the-Chocolate-Factory.jpg'],
+      ['Atomic Habits', 'James Clear', 'Non-fiction', 320, false, 140, 'images/Book-Atomic-Habits.jpg'],
+      ['Peter Pan', 'J. M. Barrie', 'Children', 240, false, 70, 'images/Book-Peter-Pan.jpg']
     ];
     var now = Date.now(), day = 864e5;
     return rows.map(function (r, i) {
