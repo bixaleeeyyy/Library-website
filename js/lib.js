@@ -18,7 +18,7 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
-  function safeUrl(u) { return /^https?:\/\/[^\s'"()<>]+$/.test(u || '') ? u : ''; }
+  function safeUrl(u) { return /^https?:\/\/[^\s'"()<>]+|images\/[\w\-.]+)$/.test(u || '') ? u : ''; }
   function ymd(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 
   // Per-person data (wishlist, progress...) is stored under the signed-in email, or "guest".
@@ -27,18 +27,18 @@
   function seed() {
     // Sample books. Replace or delete them on the Admin page.
     var rows = [
-      ['The Quiet Orchard', 'Maya Rao', 'Fiction', 320, true, 920],
-      ['Atlas of Small Things', 'Daniel Okafor', 'Non-fiction', 240, false, 610],
-      ['Cells and Seasons', 'Priya Menon', 'Science', 288, true, 700],
-      ['The Salt Road', 'Lukas Weiss', 'History', 410, false, 810],
-      ['Night Train to Nowhere', 'Elena Costa', 'Fiction', 352, true, 760],
-      ['Little Fox Learns to Count', 'Ava Brooks', 'Children', 48, true, 530],
-      ['Keeper of the Light', 'Tom Hale', 'Biography', 276, false, 330],
-      ['Physics for the Curious', 'Ravi Iyer', 'Science', 360, true, 470],
-      ['Rivers of the Old World', 'Hana Sato', 'History', 300, false, 390],
-      ['The Paper Lantern', 'Mei Lin', 'Fiction', 198, true, 280],
-      ['Algebra Made Simple', 'Sam Patel', 'Textbooks', 420, false, 240],
-      ['Stars Over the Harbour', 'Nora Kim', 'Fiction', 264, false, 180]
+      ['The Quiet Orchard', 'Maya Rao', 'Fiction', 320, true, 920, 'image/name.jpg' ],
+      ['Atlas of Small Things', 'Daniel Okafor', 'Non-fiction', 240, false, 610, 'image/name.jpg' ],
+      ['Cells and Seasons', 'Priya Menon', 'Science', 288, true, 700, 'image/name.jpg' ],
+      ['The Salt Road', 'Lukas Weiss', 'History', 410, false, 810, 'image/name.jpg' ],
+      ['Night Train to Nowhere', 'Elena Costa', 'Fiction', 352, true, 760, 'image/name.jpg' ],
+      ['Little Fox Learns to Count', 'Ava Brooks', 'Children', 48, true, 530, 'image/name.jpg' ],
+      ['Keeper of the Light', 'Tom Hale', 'Biography', 276, false, 330, 'image/name.jpg' ],
+      ['Physics for the Curious', 'Ravi Iyer', 'Science', 360, true, 470, 'image/name.jpg' ],
+      ['Rivers of the Old World', 'Hana Sato', 'History', 300, false, 390, 'image/name.jpg' ],
+      ['The Paper Lantern', 'Mei Lin', 'Fiction', 198, true, 280, 'image/name.jpg' ],
+      ['Algebra Made Simple', 'Sam Patel', 'Textbooks', 420, false, 240, 'image/name.jpg' ],
+      ['Stars Over the Harbour', 'Nora Kim', 'Fiction', 264, false, 180, 'image/name.jpg' ]
     ];
     var now = Date.now(), day = 864e5;
     return rows.map(function (r, i) {
@@ -46,7 +46,7 @@
         id: i + 1, title: r[0], author: r[1], genre: r[2], pages: r[3], ebook: r[4],
         language: 'English', year: '', publisher: '', isbn: '', copies: 3,
         summary: '[Add a short summary on the Admin page.]',
-        cover: '', ebookUrl: '', text: '', color: COLORS[i % COLORS.length],
+        cover: r[6] || '', ebookUrl: '', text: '', color: COLORS[i % COLORS.length],
         addedAt: now - i * 3 * day,
         borrows: { week: Math.round(r[5] / 20), month: Math.round(r[5] / 5), all: r[5] }
       };
