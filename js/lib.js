@@ -1,6 +1,4 @@
-/* Shared code: data storage, book cards, header/menu/footer.
-   Everything is saved in the visitor's browser (localStorage).
-   To use a real database later, replace the functions in `Lib` below. */
+/* Shared code: shared book database (Supabase), sign-in, book cards, header/menu/footer. */
 /* ============================================================
    EDIT THIS PART: your library's details.
    Change the text between the quotes. Keep the quotes and commas.
@@ -31,11 +29,20 @@ var SITE = {
 };
 /* ============================================================ */
 
+/* ============================================================
+   SHARED DATABASE (Supabase). These two values are public by design.
+   Only change them if you move to a different Supabase project.
+   ============================================================ */
+var SUPABASE_URL = 'https://zvxurdhtuhjzghnldaoi.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_BwXU4YhArlvsGabuDbGzxQ_AI948PcQ';
+/* ============================================================ */
+
+
 (function () {
   'use strict';
 
   var K = {
-    books: 'lib_books', user: 'lib_user', users: 'lib_users',
+    last: 'lib_books_last', user: 'lib_user', sess: 'lib_sess', bc: 'lib_bc',
     wish: 'lib_wish', prog: 'lib_prog', days: 'lib_days', mins: 'lib_mins',
     borrowed: 'lib_borrowed', goal: 'lib_goal', reader: 'lib_reader'
   };
@@ -51,45 +58,108 @@ var SITE = {
   function safeUrl(u) { return /^(https?:\/\/[^\s'"()<>]+|images\/[\w\-.]+)$/.test(u || '') ? u : ''; }
   function ymd(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 
-  // Per-person data (wishlist, progress...) is stored under the signed-in email, or "guest".
-  function pk(k) { var u = rd(K.user, null); return k + ':' + (u ? u.email : 'guest'); }
+  // Per-person data (wishlist, progress...) is stored in this browser under the signed-in email, or "guest".
+  function pk(k) { var u = Lib.user(); return k + ':' + (u ? u.email : 'guest'); }
 
-  function seed() {
-    // Sample books. Replace or delete them on the Admin page.
-    var rows = [
-      // Order: title, author, genre, pages, e-book (true/false), borrow count, picture (optional, e.g. 'images/orchard.jpg')
-      ['The Alchemist', 'Paulo Coelho', 'Fiction', 208, false, 176, 'images/Book-The-Alchemist.jpg'],
-      ['The Adventures of Sherlock Holmes', 'Arthur Conan Doyle', 'Fiction', 366, true, 205, 'images/Book-The-adventures-of-sherlock-holmes.jpg'],
-      ['Sapiens: A Brief History of Humankind', 'Yuval Noah Harari', 'History', 480, false, 27, 'images/Book-Sapiens-A-Brief-History-of-Humankind.jpg'],
-      ['Treasure Island', 'Robert Louis Stevenson', 'Fiction', 333, true, 169, 'images/Book-Treasure-Island.jpg'],
-      ['The Selfish Gene', 'Richard Dawkins', 'Science', 496, false, 95,'images/Book-The-Selfish-Gene.jpg'],
-      ['Crime and Punishment', 'Fyodor Dostoevsky', 'Psychological', 527, true, 83,'images/Book-Crime-And-Punishment.jpg'],
-      ['Guns, Germs, and Steel', 'Jared Diamond', 'History', 480, false, 30, 'images/Book-Guns-Germs-and-Steel.jpg'],
-      ['Oru Desathinte Katha', 'S. K. Pottekkatt', 'Malayalam', 566, false, 70, 'images/Book-Oru-Desathinte-Katha.jpg'],
-      ['Cosmos', 'Carl Sagan', 'Science', 365, false, 30, 'images/Book-Cosmos.jpg'],
-      ["Alice's Adventures in Wonderland", 'Lewis Carroll', 'Children', 122, true, 90, 'images/Book-Alice-in-Wonderland.jpg'],
-      ['Moby-Dick; or, The Whale', 'Herman Melville', 'Fiction', 635, true, 80,'images/Book-Moby-Dick.jpg'],
-      ['Ram c/o Anandhi', 'Akhil P. Dharmajan', 'Romance', 320, false, 40, 'images/Book-Ram-care-of-Anandhi.jpg'],
-      ['Wings of Fire', 'A. P. J. Abdul Kalam', 'Autobiography', 180, false, 180, 'images/Book-Wings-of-Fire.jpg'],
-      ['Dracula', 'Bram Stoker', 'Horror', 480, true, 72,'images/Book-Dracula.jpg'],
-      ['The Count of Monte Cristo', 'Alexandre Dumas', 'Fiction', 1804, false, 30, 'images/Book-The-count-of-Monte-cristo.jpg'],
-      ['The Silk Roads: A New History of the World', 'Peter Frankopan', 'History', 736, false, 49, 'images/Book-The-Silk-Roads-A-New-History-of-the-World.jpg'],
-      ['The Strange Case of Dr Jekyll and Mr Hyde', 'Robert Louis Stevenson', 'Fiction', 90, true, 153, 'images/Book-the-strange-case-of-dr-jekyll-and-hyde.jpg'],
-      ['Balyakalasakhi', 'Vaikom Muhammad Basheer', 'Malayalam', 80, false, 108, 'images/Book-Balyakalasakhi.jpg'],
-      ['Charlie and the Chocolate Factory', 'Roald Dahl', 'Children', 192, true, 60,'images/Book-Charlie-and-the-Chocolate-Factory.jpg'],
-      ['Atomic Habits', 'James Clear', 'Non-fiction', 320, false, 140, 'images/Book-Atomic-Habits.jpg'],
-      ['Peter Pan', 'J. M. Barrie', 'Children', 240, false, 70, 'images/Book-Peter-Pan.jpg']
-    ];
-    var now = Date.now(), day = 864e5;
-    return rows.map(function (r, i) {
-      return {
-        id: i + 1, title: r[0], author: r[1], genre: r[2], pages: r[3], ebook: r[4],
-        language: 'English', year: '', publisher: '', isbn: '', copies: 3,
-        summary: '[Add a short summary on the Admin page.]',
-        cover: r[6] || '', ebookUrl: '', text: '', color: COLORS[i % COLORS.length],
-        addedAt: now - i * 3 * day,
-        borrows: { week: Math.round(r[5] / 20), month: Math.round(r[5] / 5), all: r[5] }
-      };
+  /* ---------- talking to Supabase ---------- */
+  function hdrs(token, extra) {
+    var h = { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' };
+    if (token) h['Authorization'] = 'Bearer ' + token;
+    for (var k in (extra || {})) h[k] = extra[k];
+    return h;
+  }
+  function req(method, path, body, token, extra) {
+    return fetch(SUPABASE_URL + path, { method: method, headers: hdrs(token, extra), body: body == null ? undefined : JSON.stringify(body) })
+      .then(function (r) {
+        return r.text().then(function (t) {
+          var j = null; try { j = t ? JSON.parse(t) : null; } catch (e) {}
+          return { ok: r.ok, status: r.status, json: j };
+        });
+      });
+  }
+  function errMsg(res) { var j = res.json || {}; return j.error_description || j.msg || j.message || j.error || ('Error ' + res.status); }
+
+  function getSess() { return rd(K.sess, null); }
+  function setSess(s) { if (s) wr(K.sess, s); else { try { localStorage.removeItem(K.sess); } catch (e) {} } }
+  function toSess(j, old) {
+    return {
+      access_token: j.access_token, refresh_token: j.refresh_token,
+      expires_at: j.expires_at || Math.floor(Date.now() / 1000) + (j.expires_in || 3600),
+      uid: (j.user && j.user.id) || (old && old.uid) || ''
+    };
+  }
+  // Gives a valid access token (refreshing it if needed), or null when signed out.
+  function token() {
+    var s = getSess(); if (!s) return Promise.resolve(null);
+    if (s.expires_at - 60 > Date.now() / 1000) return Promise.resolve(s.access_token);
+    return req('POST', '/auth/v1/token?grant_type=refresh_token', { refresh_token: s.refresh_token }).then(function (r) {
+      if (r.ok && r.json && r.json.access_token) { setSess(toSess(r.json, s)); return r.json.access_token; }
+      if (r.status >= 400 && r.status < 500) { setSess(null); try { localStorage.removeItem(K.user); } catch (e) {} }
+      return null;
+    }, function () { return s.access_token; });
+  }
+  function authed(method, path, body, extra) {
+    return token().then(function (t) { return req(method, path, body, t, extra); });
+  }
+  function getProfile(uid, tok) {
+    return req('GET', '/rest/v1/profiles?select=email,name,role&id=eq.' + encodeURIComponent(uid), null, tok).then(function (r) {
+      return (r.ok && r.json && r.json[0]) || null;
+    }, function () { return null; });
+  }
+
+  /* ---------- books (shared, loaded from the database) ---------- */
+  function fromRow(r) {
+    return {
+      id: r.id, title: r.title, author: r.author, genre: r.genre || '', pages: r.pages || 0, ebook: !!r.ebook,
+      language: r.language || '', year: r.year || '', publisher: r.publisher || '', isbn: r.isbn || '', copies: r.copies == null ? 0 : r.copies,
+      summary: r.summary || '', cover: r.cover || '', ebookUrl: r.ebook_url || '', text: r.text_content || '',
+      color: r.color || COLORS[(Number(r.id) || 0) % COLORS.length],
+      addedAt: Date.parse(r.added_at) || 0,
+      borrows: { week: r.borrows_week || 0, month: r.borrows_month || 0, all: r.borrows_all || 0 }
+    };
+  }
+  function toRow(b) {
+    var r = {
+      title: b.title, author: b.author, genre: b.genre, pages: Number(b.pages) || 0, ebook: !!b.ebook,
+      ebook_url: b.ebookUrl || '', text_content: b.text || '', copies: Math.max(0, Number(b.copies) || 0),
+      language: b.language || '', year: String(b.year == null ? '' : b.year), publisher: b.publisher || '', isbn: b.isbn || '',
+      summary: b.summary || '', cover: b.cover || '', color: b.color || ''
+    };
+    if (b.addedAt) r.added_at = new Date(b.addedAt).toISOString();
+    return r;
+  }
+  var BOOKS = null, loadFailed = false;
+  function clearBooksCache() { BOOKS = null; try { sessionStorage.removeItem(K.bc); } catch (e) {} }
+  function loadBooksSync() {
+    try { var c = JSON.parse(sessionStorage.getItem(K.bc)); if (c && Date.now() - c.t < 60000) return c.b; } catch (e) {}
+    try {
+      var x = new XMLHttpRequest();
+      x.open('GET', SUPABASE_URL + '/rest/v1/books?select=*&order=added_at.desc&limit=1000', false);
+      x.setRequestHeader('apikey', SUPABASE_KEY);
+      x.send(null);
+      if (x.status === 200) {
+        var b = JSON.parse(x.responseText).map(fromRow);
+        try { sessionStorage.setItem(K.bc, JSON.stringify({ t: Date.now(), b: b })); } catch (e) {}
+        wr(K.last, b);
+        return b;
+      }
+    } catch (e) {}
+    loadFailed = true;
+    return rd(K.last, []);
+  }
+  function showLoadError() {
+    var h = document.getElementById('site-header');
+    if (!h || document.getElementById('load-err')) return;
+    var d = document.createElement('div'); d.id = 'load-err'; d.className = 'msg err';
+    d.style.cssText = 'margin:0;border-radius:0;text-align:center';
+    d.textContent = 'We could not load the books right now. Please check your connection and refresh the page.';
+    h.appendChild(d);
+  }
+  function writeBook(method, query, row) {
+    return authed(method, '/rest/v1/books' + query, row, { 'Prefer': 'return=representation' }).then(function (r) {
+      if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? 'Not allowed. Please sign in with a staff account.' : errMsg(r));
+      if (!r.json || !r.json.length) throw new Error('Not allowed. Only staff accounts can change books.');
+      clearBooksCache(); return fromRow(r.json[0]);
     });
   }
 
@@ -99,18 +169,78 @@ var SITE = {
     qs: function (n) { return new URLSearchParams(location.search).get(n); },
 
     /* books */
-    books: function () { var b = rd(K.books, null), v = 2; if (!b || !b.length || rd('lib_booksv', 0) !== v) { b = seed(); wr(K.books, b); wr('lib_booksv', v); } return b; },
-    saveBooks: function (b) { wr(K.books, b); },
-    resetBooks: function () { wr(K.books, seed()); },
+    books: function () {
+      if (!BOOKS) { BOOKS = loadBooksSync(); if (loadFailed && !BOOKS.length) showLoadError(); }
+      return BOOKS;
+    },
     book: function (id) { return Lib.books().filter(function (x) { return String(x.id) === String(id); })[0]; },
     genres: function () {
       var g = {}; Lib.books().forEach(function (b) { if (b.genre) g[b.genre] = 1; });
       return Object.keys(g).sort();
     },
+    addBook: function (b) { return writeBook('POST', '', toRow(b)); },
+    updateBook: function (id, b) { return writeBook('PATCH', '?id=eq.' + Number(id), toRow(b)); },
+    removeBook: function (id) { return writeBook('DELETE', '?id=eq.' + Number(id), null); },
+    recordBorrow: function (id) {
+      return authed('POST', '/rest/v1/rpc/record_borrow', { p_id: Number(id) }).then(function (r) { clearBooksCache(); return r.ok; }, function () { return false; });
+    },
 
-    /* account (demo: stored in this browser only) */
-    user: function () { return rd(K.user, null); },
-    setUser: function (u) { if (u) wr(K.user, u); else localStorage.removeItem(K.user); },
+    /* account (real sign-in through Supabase) */
+    user: function () { return getSess() ? rd(K.user, null) : null; },
+    setUser: function (u) { if (u) wr(K.user, u); else { try { localStorage.removeItem(K.user); } catch (e) {} } },
+    isStaff: function (u) { u = u || Lib.user(); return !!u && (u.role === 'admin' || u.role === 'editor'); },
+    // Re-reads the signed-in person's role from the database (so role changes apply).
+    refreshUser: function () {
+      return token().then(function (t) {
+        var s = getSess();
+        if (!t || !s) { Lib.setUser(null); return null; }
+        return getProfile(s.uid, t).then(function (p) {
+          var cur = rd(K.user, null);
+          if (!p) return cur;
+          var u = { email: p.email, name: p.name, role: p.role };
+          Lib.setUser(u); return u;
+        });
+      }, function () { return rd(K.user, null); });
+    },
+    signIn: function (email, pw) {
+      return req('POST', '/auth/v1/token?grant_type=password', { email: email, password: pw }).then(function (r) {
+        if (!r.ok || !r.json || !r.json.access_token) throw new Error(errMsg(r));
+        var s = toSess(r.json); setSess(s);
+        return getProfile(s.uid, s.access_token).then(function (p) {
+          var u = p ? { email: p.email, name: p.name, role: p.role } : { email: email, name: email.split('@')[0], role: 'member' };
+          Lib.setUser(u); return u;
+        });
+      });
+    },
+    signUp: function (email, pw, name) {
+      return req('POST', '/auth/v1/signup', { email: email, password: pw, data: { name: name } }).then(function (r) {
+        if (!r.ok) throw new Error(errMsg(r));
+        if (!r.json || !r.json.access_token) return { user: null, confirm: true };
+        var s = toSess(r.json); setSess(s);
+        return getProfile(s.uid, s.access_token).then(function (p) {
+          var u = p ? { email: p.email, name: p.name, role: p.role } : { email: email, name: name, role: 'member' };
+          Lib.setUser(u); return { user: u, confirm: false };
+        });
+      });
+    },
+    signOut: function () {
+      var s = getSess();
+      if (s) { try { fetch(SUPABASE_URL + '/auth/v1/logout', { method: 'POST', headers: hdrs(s.access_token), keepalive: true }); } catch (e) {} }
+      setSess(null); Lib.setUser(null); location.href = 'index.html';
+    },
+    // Admin only: list people and change their role (member, editor, admin).
+    listUsers: function () {
+      return authed('GET', '/rest/v1/profiles?select=id,email,name,role&order=created_at.asc').then(function (r) {
+        if (!r.ok) throw new Error(errMsg(r)); return r.json || [];
+      });
+    },
+    setRole: function (id, role) {
+      return authed('PATCH', '/rest/v1/profiles?id=eq.' + encodeURIComponent(id), { role: role }, { 'Prefer': 'return=representation' }).then(function (r) {
+        if (!r.ok) throw new Error(errMsg(r));
+        if (!r.json || !r.json.length) throw new Error('Only an admin can change roles.');
+        return true;
+      });
+    },
 
     /* wishlist */
     wishlist: function () { return rd(pk(K.wish), []); },
@@ -121,7 +251,7 @@ var SITE = {
       wr(pk(K.wish), w); return i === -1;
     },
 
-    /* reading progress, days and minutes */
+    /* reading progress, days and minutes (saved in this browser) */
     progress: function () { return rd(pk(K.prog), {}); },
     saveProgress: function (id, page, total) {
       var p = Lib.progress(); p[id] = { page: page, total: total, ts: Date.now() }; wr(pk(K.prog), p);
@@ -143,7 +273,7 @@ var SITE = {
     goal: function () { return rd(pk(K.goal), 12); },
     setGoal: function (n) { wr(pk(K.goal), n); },
 
-    /* borrowing */
+    /* borrowing (due dates are saved in this browser) */
     borrowed: function () { return rd(pk(K.borrowed), {}); },
     saveBorrowed: function (b) { wr(pk(K.borrowed), b); },
 
@@ -159,8 +289,7 @@ var SITE = {
       return '<div class="book"><a href="book.html?id=' + b.id + '" aria-label="' + esc(b.title) + '">' + Lib.cover(b, o.ebook) + '</a>' +
         '<a class="t" href="book.html?id=' + b.id + '">' + esc(b.title) + '</a><div class="a">' + esc(b.author) + '</div>' +
         (o.ebook ? '<a class="btn primary sm" href="reader.html?id=' + b.id + '">Read</a>' : '') + '</div>';
-    },
-    signOut: function () { Lib.setUser(null); location.href = 'index.html'; }
+    }
   };
   window.Lib = Lib;
 
@@ -187,7 +316,7 @@ var SITE = {
       '<div class="drawer" id="drawer" hidden><nav aria-label="Main menu">' +
       '<div class="top">Menu<button class="icon-btn" id="menu-close" aria-label="Close menu">' + close + '</button></div>' +
       links.map(function (l) { return '<a class="l" href="' + l[0] + '">' + l[1] + '</a>'; }).join('') +
-      ((u && u.role === 'admin') ? '<small>Library staff</small><a class="l" href="admin.html">Admin dashboard</a>' : '') +
+      (Lib.isStaff(u) ? '<small>Library staff</small><a class="l" href="admin.html">' + (u.role === 'admin' ? 'Admin dashboard' : 'Manage books') + '</a>' : '') +
       '<div class="grow"></div>' +
       (u ? '<p class="muted" style="margin:8px 0">Signed in as ' + esc(u.name || u.email) + '</p><button class="btn" id="signout">Sign out</button>'
          : '<a class="btn primary" href="signin.html">Sign in</a>') +
@@ -200,6 +329,8 @@ var SITE = {
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !dr.hidden) show(false); });
     var so = document.getElementById('signout'); if (so) so.onclick = Lib.signOut;
   }
+  // Keep the signed-in role up to date (for example after an admin makes someone an editor).
+  if (u) Lib.refreshUser().then(function (nu) { if ((nu ? nu.role : null) !== u.role) location.reload(); });
   var foot = document.getElementById('site-footer');
   if (foot) {
     foot.innerHTML = '<footer class="foot"><div class="wrap cols">' +
