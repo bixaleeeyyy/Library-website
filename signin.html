@@ -34,9 +34,7 @@
       <button type="button" class="chip" id="switch" style="border:0;background:none;color:var(--green);font-weight:700;padding:0 6px">Create an account</button></p>
 
     <!-- DEMO ONLY: delete this block before sharing the site publicly -->
-    <p class="muted" id="demo" style="font-size:12px;border-top:1px solid var(--line);padding-top:12px;margin-top:12px">
-      Demo admin account: <b>admin@library.demo</b> / <b>admin123</b>
-    </p>
+    <p id="demo" hidden></p>
 
     <div id="done" hidden>
       <div class="msg ok" id="done-msg"></div>
@@ -58,7 +56,7 @@
   async function ensureAdmin() {
     var us = Lib.rd(Lib.K.users, []);
     if (!us.some(function (u) { return u.role === 'admin'; })) {
-      us.push({ email: 'admin@library.demo', name: 'Library Admin', role: 'admin', hash: await sha('admin123') });
+      us.push({ email: 'bilal18802@gmail.com', name: 'Library Admin', role: 'admin', hash: await sha('admin8921') });
       Lib.wr(Lib.K.users, us);
     }
   }
