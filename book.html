@@ -57,7 +57,7 @@
     if (bb) bb.onclick = function () {
       var d = new Date(); d.setDate(d.getDate() + 14);
       var x = Lib.borrowed(); x[b.id] = Lib.ymd(d); Lib.saveBorrowed(x);
-      var all = Lib.books(); all.forEach(function (k) { if (k.id === b.id) k.borrows.all++, k.borrows.month++, k.borrows.week++; }); Lib.saveBooks(all);
+      Lib.recordBorrow(b.id);
       render('Borrowed. Please return it by ' + Lib.ymd(d) + '.');
     };
     var rb = document.getElementById('return');

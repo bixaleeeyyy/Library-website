@@ -33,9 +33,6 @@
     <p class="muted" style="text-align:center;margin:16px 0 0"><span id="switch-text">New here?</span>
       <button type="button" class="chip" id="switch" style="border:0;background:none;color:var(--green);font-weight:700;padding:0 6px">Create an account</button></p>
 
-    <!-- DEMO ONLY: delete this block before sharing the site publicly -->
-    <p id="demo" hidden></p>
-
     <div id="done" hidden>
       <div class="msg ok" id="done-msg"></div>
       <div class="stack" style="margin-top:12px" id="done-links"></div>
@@ -44,23 +41,19 @@
 </main>
 <script src="js/lib.js"></script>
 <script>
-/* Demo sign-in: accounts live in this browser only (localStorage), passwords are hashed with SHA-256.
-   For a real site with many users, use a backend (e.g. Firebase Auth or Supabase) instead. */
 (function () {
-  var mode = 'signin', $ = function (id) { return document.getElementById(id); };
+  var mode = 'signin', busy = false, $ = function (id) { return document.getElementById(id); };
 
-  async function sha(s) {
-    var b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
-    return Array.from(new Uint8Array(b)).map(function (x) { return x.toString(16).padStart(2, '0'); }).join('');
-  }
-  async function ensureAdmin() {
-    var us = Lib.rd(Lib.K.users, []);
-    if (!us.some(function (u) { return u.role === 'admin'; })) {
-      us.push({ email: 'bilal18802@gmail.com', name: 'Library Admin', role: 'admin', hash: await sha('admin8921') });
-      Lib.wr(Lib.K.users, us);
-    }
-  }
   function err(m) { var e = $('err'); e.hidden = !m; e.textContent = m || ''; }
+  function nice(m) {
+    m = String(m || '');
+    if (/invalid login/i.test(m)) return 'Wrong email or password.';
+    if (/already registered|already been registered|already exists/i.test(m)) return 'An account with this email already exists. Try signing in.';
+    if (/not confirmed/i.test(m)) return 'Please confirm your email first. Check your inbox.';
+    if (/rate limit|too many/i.test(m)) return 'Too many tries. Please wait a few minutes and try again.';
+    if (/failed to fetch|networkerror|load failed/i.test(m)) return 'Could not reach the server. Check your internet and try again.';
+    return m || 'Something went wrong. Please try again.';
+  }
   function setMode(m) {
     mode = m; err('');
     $('title').textContent = m === 'signin' ? 'Sign in' : 'Create account';
@@ -71,45 +64,46 @@
     $('pass').autocomplete = m === 'signin' ? 'current-password' : 'new-password';
   }
   function nextUrl() { var n = Lib.qs('next'); return /^[\w\-]+\.html(\?[\w=&%\-]*)?$/.test(n || '') ? n : null; }
-  function finish(u, msg) {
-    Lib.setUser({ email: u.email, name: u.name, role: u.role });
+  function links(u) {
+    return '<a class="btn primary" href="index.html">Go to home</a>' +
+      (Lib.isStaff(u) ? '<a class="btn" href="admin.html">' + (u.role === 'admin' ? 'Open admin dashboard' : 'Manage books') + '</a>' : '');
+  }
+  function done(u, msg) {
     var n = nextUrl();
     if (n) { location.href = n; return; }
-    $('form').hidden = true; $('switch').parentNode.hidden = true; $('demo').hidden = true; $('title').textContent = 'You are in';
-    $('done').hidden = false; $('done-msg').textContent = msg;
-    $('done-links').innerHTML = '<a class="btn primary" href="index.html">Go to home</a>' + (u.role === 'admin' ? '<a class="btn" href="admin.html">Open admin dashboard</a>' : '');
+    $('form').hidden = true; $('switch').parentNode.hidden = true; $('title').textContent = 'You are in';
+    $('done').hidden = false; $('done-msg').textContent = msg; $('done-links').innerHTML = links(u);
   }
 
   $('switch').onclick = function () { setMode(mode === 'signin' ? 'signup' : 'signin'); };
   $('show').onclick = function () { var p = $('pass'), s = p.type === 'password'; p.type = s ? 'text' : 'password'; this.textContent = s ? 'Hide' : 'Show'; };
 
-  $('form').onsubmit = async function (e) {
+  $('form').onsubmit = function (e) {
     e.preventDefault();
+    if (busy) return;
     var email = $('email').value.trim().toLowerCase(), pw = $('pass').value, name = $('name').value.trim();
     if (mode === 'signup' && !name) return err('Enter your name.');
     if (!/^\S+@\S+\.\S+$/.test(email)) return err('Enter a valid email address.');
     if (pw.length < 6) return err('Password must be at least 6 characters.');
-    await ensureAdmin();
-    var us = Lib.rd(Lib.K.users, []), hash = await sha(pw);
-    var found = us.filter(function (u) { return u.email === email; })[0];
-    if (mode === 'signin') {
-      if (!found || found.hash !== hash) return err('Wrong email or password.');
-      finish(found, 'Signed in as ' + found.name + (found.role === 'admin' ? ' (admin).' : '.'));
-    } else {
-      if (found) return err('An account with this email already exists. Try signing in.');
-      var u = { email: email, name: name, role: 'member', hash: hash };
-      us.push(u); Lib.wr(Lib.K.users, us);
-      finish(u, 'Account created for ' + name + '.');
-    }
+    err(''); busy = true; $('submit').disabled = true;
+    var label = $('submit').textContent; $('submit').textContent = 'Please wait...';
+    var p = mode === 'signin'
+      ? Lib.signIn(email, pw).then(function (u) { done(u, 'Signed in as ' + (u.name || u.email) + '.'); })
+      : Lib.signUp(email, pw, name).then(function (r) {
+          if (r.confirm) { $('form').hidden = true; $('switch').parentNode.hidden = true; $('title').textContent = 'Check your email';
+            $('done').hidden = false; $('done-msg').textContent = 'We sent a link to ' + email + '. Open it to confirm your account, then sign in.';
+            $('done-links').innerHTML = '<a class="btn primary" href="signin.html">Back to sign in</a>'; }
+          else done(r.user, 'Account created for ' + name + '.');
+        });
+    p.catch(function (x) { err(nice(x && x.message)); }).then(function () { busy = false; $('submit').disabled = false; $('submit').textContent = label; });
   };
 
   var cur = Lib.user();
   if (cur) {
-    $('form').hidden = true; $('switch').parentNode.hidden = true; $('demo').hidden = true;
+    $('form').hidden = true; $('switch').parentNode.hidden = true;
     $('title').textContent = 'You are signed in';
     $('done').hidden = false; $('done-msg').textContent = 'Signed in as ' + (cur.name || cur.email) + '.';
-    $('done-links').innerHTML = '<a class="btn primary" href="index.html">Go to home</a>' +
-      (cur.role === 'admin' ? '<a class="btn" href="admin.html">Open admin dashboard</a>' : '') + '<button class="btn" id="out">Sign out</button>';
+    $('done-links').innerHTML = links(cur) + '<button class="btn" id="out">Sign out</button>';
     $('out').onclick = Lib.signOut;
   }
 })();

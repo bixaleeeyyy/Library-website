@@ -12,22 +12,23 @@
 <div id="site-header"></div>
 <main class="wrap page" id="main">
 
+  <p id="checking" class="muted">Checking your account...</p>
+
   <div id="locked" class="card" hidden>
     <h1>Staff only</h1>
-    <p class="muted">Sign in with an admin account to manage books.</p>
+    <p class="muted">Sign in with an admin or editor account to manage books.</p>
     <a class="btn primary" href="signin.html?next=admin.html">Sign in</a>
   </div>
 
   <div id="panel" hidden>
     <h1>Admin dashboard</h1>
-    <p class="muted">Changes here update the home page: Recently added, Popular, E-books and All books.</p>
+    <p class="muted">Changes here are saved for everyone and show on the whole site.</p>
     <div class="stats" id="stats"></div>
 
     <div class="two" style="align-items:start">
       <section class="card">
         <h2 style="font-size:20px">Books <span class="muted" style="font-size:14px;font-family:'DM Sans'">(newest first)</span></h2>
         <div id="list"></div>
-        <button class="btn danger" id="reset" style="margin-top:12px">Reset to sample books</button>
       </section>
 
       <section class="card">
@@ -46,10 +47,10 @@
           <label for="publisher">Publisher</label><input id="publisher" type="text">
           <label for="isbn">ISBN</label><input id="isbn" type="text">
           <label for="summary">Summary</label><textarea id="summary"></textarea>
-          <label for="cover">Cover image link (optional)</label><input id="cover" type="url" placeholder="https://...">
+          <label for="cover">Cover picture (optional)</label><input id="cover" type="text" placeholder="images/book1.jpg or https://...">
           <label style="display:flex;align-items:center;gap:10px;min-height:44px;font-size:15px;font-weight:500"><input id="ebook" type="checkbox"> This book is also available as an e-book</label>
           <div id="ebook-box" hidden>
-            <label for="ebookUrl">PDF link (optional)</label><input id="ebookUrl" type="url" placeholder="https://...">
+            <label for="ebookUrl">PDF file (optional)</label><input id="ebookUrl" type="text" placeholder="pdfs/book1.pdf or https://...">
             <label for="text">E-book text (optional). Separate paragraphs with a blank line.</label><textarea id="text" style="min-height:160px"></textarea>
           </div>
           <label id="bump-row" hidden style="display:flex;align-items:center;gap:10px;min-height:44px;font-size:15px;font-weight:500"><input id="bump" type="checkbox"> Move to the top of Recently added</label>
@@ -60,19 +61,22 @@
         </form>
       </section>
     </div>
+
+    <section class="card" id="users-card" hidden style="margin-top:12px">
+      <h2 style="font-size:20px">People</h2>
+      <p class="muted" style="margin:6px 0 0">Admin: full control. Editor: can add and edit books. Member: a normal reader account.</p>
+      <div id="users"></div>
+      <div class="msg err" id="uerr" role="alert" hidden></div>
+    </section>
   </div>
 </main>
 <script src="js/lib.js"></script>
 <script>
 (function () {
   var E = Lib.esc, $ = function (id) { return document.getElementById(id); };
-  var u = Lib.user();
-  // NOTE: this check runs in the browser, so it only hides the page. Real security needs a server.
-  if (!u || u.role !== 'admin') { $('locked').hidden = false; return; }
-  $('panel').hidden = false;
-
+  var PDF = /^(https?:\/\/[^\s'"()<>]+|pdfs\/[\w\-.]+\.pdf)$/i;
   var F = ['title', 'author', 'genre', 'pages', 'copies', 'language', 'year', 'publisher', 'isbn', 'summary', 'cover', 'ebookUrl', 'text'];
-  var editId = null;
+  var editId = null, me = null, nUsers = null;
 
   function msg(id, t) { var e = $(id); e.hidden = !t; e.textContent = t || ''; }
   function clearForm() {
@@ -81,16 +85,13 @@
     editId = null; $('ftitle').textContent = 'Add a new book'; $('save').textContent = 'Add book';
     $('cancel').hidden = true; $('bump-row').hidden = true;
   }
-  $('ebook').onchange = function () { $('ebook-box').hidden = !this.checked; };
-  $('cancel').onclick = function () { clearForm(); msg('err'); msg('ok'); };
 
   function draw() {
     var all = Lib.books().slice().sort(function (a, b) { return b.addedAt - a.addedAt; });
-    var members = Lib.rd(Lib.K.users, []).filter(function (x) { return x.role === 'member'; }).length;
     $('stats').innerHTML =
       '<div class="stat"><b>' + all.length + '</b><span>Total books</span></div>' +
       '<div class="stat"><b>' + all.filter(function (b) { return b.ebook; }).length + '</b><span>E-books</span></div>' +
-      '<div class="stat"><b>' + members + '</b><span>Members (this browser)</span></div>';
+      (nUsers == null ? '' : '<div class="stat"><b>' + nUsers + '</b><span>People with accounts</span></div>');
     $('genre-list').innerHTML = Lib.genres().map(function (g) { return '<option value="' + E(g) + '">'; }).join('');
     $('list').innerHTML = all.map(function (b, i) {
       return '<div class="item"><div class="mini" style="width:36px">' + Lib.cover(b) + '</div><div class="grow"><b>' + E(b.title) + '</b>' +
@@ -98,6 +99,20 @@
         '<div class="muted" style="font-size:12px">' + E(b.author) + ' · ' + E(b.genre) + (b.ebook ? ' · E-book' : '') + '</div></div>' +
         '<div class="acts"><button class="btn" data-edit="' + b.id + '">Edit</button><button class="btn danger" data-del="' + b.id + '">Remove</button></div></div>';
     }).join('') || '<p class="muted">No books yet. Add one using the form.</p>';
+  }
+
+  function drawUsers() {
+    Lib.listUsers().then(function (rows) {
+      nUsers = rows.length; draw();
+      $('users').innerHTML = rows.map(function (p) {
+        var mine = p.email === me.email;
+        return '<div class="item"><div class="grow"><b>' + E(p.name || p.email) + '</b>' + (mine ? ' <span class="chipinfo">You</span>' : '') +
+          '<div class="muted" style="font-size:12px">' + E(p.email) + '</div></div>' +
+          '<select data-role="' + E(p.id) + '" style="width:auto;min-height:44px"' + (mine ? ' disabled' : '') + '>' +
+          ['member', 'editor', 'admin'].map(function (r) { return '<option value="' + r + '"' + (p.role === r ? ' selected' : '') + '>' + r.charAt(0).toUpperCase() + r.slice(1) + '</option>'; }).join('') +
+          '</select></div>';
+      }).join('') || '<p class="muted">No accounts yet.</p>';
+    }, function (x) { msg('uerr', x.message); });
   }
 
   document.addEventListener('click', function (e) {
@@ -110,43 +125,63 @@
       $('cancel').hidden = false; $('bump-row').hidden = false; msg('err'); msg('ok');
       $('form').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-    if (del && confirm('Remove this book?')) {
-      var id = del.getAttribute('data-del');
-      Lib.saveBooks(Lib.books().filter(function (x) { return String(x.id) !== String(id); }));
-      if (String(editId) === String(id)) clearForm();
-      msg('ok', 'Book removed.'); draw();
+    if (del && confirm('Remove this book for everyone?')) {
+      var id = del.getAttribute('data-del'); msg('err'); msg('ok');
+      Lib.removeBook(id).then(function () {
+        if (String(editId) === String(id)) clearForm();
+        msg('ok', 'Book removed.'); draw();
+      }, function (x) { msg('err', x.message); });
     }
   });
 
-  $('reset').onclick = function () {
-    if (confirm('Replace all books with the sample books? Your changes will be lost.')) { Lib.resetBooks(); clearForm(); msg('ok', 'Sample books restored.'); draw(); }
-  };
+  function start() {
+    $('checking').hidden = true; $('panel').hidden = false;
+    if (me.role === 'admin') { $('users-card').hidden = false; drawUsers(); }
+    $('ebook').onchange = function () { $('ebook-box').hidden = !this.checked; };
+    $('cancel').onclick = function () { clearForm(); msg('err'); msg('ok'); };
 
-  $('form').onsubmit = function (e) {
-    e.preventDefault(); msg('err'); msg('ok');
-    var v = {}; F.forEach(function (k) { v[k] = $(k).value.trim(); });
-    if (!v.title || !v.author) return msg('err', 'Book title and author name are required.');
-    if (v.cover && !Lib.safeUrl(v.cover)) return msg('err', 'The cover link must start with http:// or https://');
-    if (v.ebookUrl && !Lib.safeUrl(v.ebookUrl)) return msg('err', 'The PDF link must start with http:// or https://');
-    var data = {
-      title: v.title, author: v.author, genre: v.genre || 'General', pages: Number(v.pages) || 0, copies: Math.max(0, Number(v.copies) || 0),
-      language: v.language, year: v.year, publisher: v.publisher, isbn: v.isbn, summary: v.summary || '[No summary yet]',
-      cover: v.cover, ebook: $('ebook').checked, ebookUrl: v.ebookUrl, text: v.text
+    $('users').addEventListener('change', function (e) {
+      var sel = e.target.closest('[data-role]'); if (!sel) return;
+      msg('uerr'); sel.disabled = true;
+      Lib.setRole(sel.getAttribute('data-role'), sel.value).then(function () { sel.disabled = false; },
+        function (x) { msg('uerr', x.message); drawUsers(); });
+    });
+
+    $('form').onsubmit = function (e) {
+      e.preventDefault(); msg('err'); msg('ok');
+      var v = {}; F.forEach(function (k) { v[k] = $(k).value.trim(); });
+      if (!v.title || !v.author) return msg('err', 'Book title and author name are required.');
+      if (v.cover && !Lib.safeUrl(v.cover)) return msg('err', 'The cover must be like images/book1.jpg or start with https://');
+      if (v.ebookUrl && !PDF.test(v.ebookUrl)) return msg('err', 'The PDF must be like pdfs/book1.pdf or start with https://');
+      var data = {
+        title: v.title, author: v.author, genre: v.genre || 'General', pages: Number(v.pages) || 0, copies: Math.max(0, Number(v.copies) || 0),
+        language: v.language, year: v.year, publisher: v.publisher, isbn: v.isbn, summary: v.summary || '[No summary yet]',
+        cover: v.cover, ebook: $('ebook').checked, ebookUrl: v.ebookUrl, text: v.text
+      };
+      var wasEdit = !!editId, btn = $('save'), label = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Saving...';
+      var job;
+      if (wasEdit) {
+        var old = Lib.book(editId) || {};
+        data.color = old.color; if ($('bump').checked) data.addedAt = Date.now();
+        job = Lib.updateBook(editId, data);
+      } else {
+        data.color = Lib.COLORS[Math.floor(Math.random() * Lib.COLORS.length)];
+        job = Lib.addBook(data);
+      }
+      job.then(function () {
+        clearForm();
+        msg('ok', wasEdit ? 'Changes saved.' : 'Book added. Everyone can see it now.'); draw();
+      }, function (x) { msg('err', x.message); btn.textContent = label; })
+        .then(function () { btn.disabled = false; });
     };
-    var all = Lib.books();
-    if (editId) {
-      all.forEach(function (b) { if (b.id === editId) { Object.assign(b, data); if ($('bump').checked) b.addedAt = Date.now(); } });
-      msg('ok', 'Changes saved.');
-    } else {
-      var id = all.reduce(function (m, b) { return Math.max(m, b.id); }, 0) + 1;
-      all.push(Object.assign({ id: id, color: Lib.COLORS[id % Lib.COLORS.length], addedAt: Date.now(), borrows: { week: 0, month: 0, all: 0 } }, data));
-      msg('ok', 'Book added. It now appears in Recently added on the home page.');
-    }
-    Lib.saveBooks(all);
-    var ok = $('ok').textContent; clearForm(); msg('ok', ok); draw();
-  };
+    clearForm(); draw();
+  }
 
-  draw();
+  Lib.refreshUser().then(function (u) {
+    if (!Lib.isStaff(u)) { $('checking').hidden = true; $('locked').hidden = false; return; }
+    me = u; start();
+  });
 })();
 </script>
 </body>
